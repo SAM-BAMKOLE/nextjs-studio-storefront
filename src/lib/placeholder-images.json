@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "A modern, sleek wireless headphone set in black.",
+      "imageUrl": "https://picsum.photos/seed/1/600/400",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "2",
+      "description": "A stylish and durable backpack, perfect for daily commute or travel.",
+      "imageUrl": "https://picsum.photos/seed/2/600/400",
+      "imageHint": "durable backpack"
+    },
+    {
+      "id": "3",
+      "description": "A smart watch with a circular face and a black strap, showing a colorful watch face.",
+      "imageUrl": "https://picsum.photos/seed/3/600/400",
+      "imageHint": "smart watch"
+    },
+    {
+      "id": "4",
+      "description": "A professional-grade coffee maker for brewing the perfect cup at home.",
+      "imageUrl": "https://picsum.photos/seed/4/600/400",
+      "imageHint": "coffee maker"
+    },
+    {
+      "id": "5",
+      "description": "A comfortable and ergonomic office chair in gray fabric.",
+      "imageUrl": "https://picsum.photos/seed/5/600/400",
+      "imageHint": "office chair"
+    },
+    {
+      "id": "6",
+      "description": "A high-performance running shoe with a vibrant color scheme.",
+      "imageUrl": "https://picsum.photos/seed/6/600/400",
+      "imageHint": "running shoe"
+    },
+    {
+      "id": "7",
+      "description": "A portable bluetooth speaker with a rugged, water-resistant design.",
+      "imageUrl": "https://picsum.photos/seed/7/600/400",
+      "imageHint": "bluetooth speaker"
+    },
+    {
+      "id": "8",
+      "description": "A lightweight and powerful laptop with a minimalist design.",
+      "imageUrl": "https://picsum.photos/seed/8/600/400",
+      "imageHint": "modern laptop"
+    }
+  ]
 }

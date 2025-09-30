@@ -1,0 +1,142 @@
+'use client';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useCart } from '@/hooks/use-cart';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { MinusCircle, PlusCircle, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+
+export function CartView() {
+    const { state, dispatch, totalPrice } = useCart();
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+
+    const handleUpdateQuantity = (id: string, quantity: number) => {
+        dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+    };
+
+    const handleRemoveItem = (id: string) => {
+        dispatch({ type: 'REMOVE_ITEM', payload: { id } });
+    };
+
+    const handleCheckout = () => {
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'Not logged in',
+                description: 'Please log in to proceed to checkout.',
+            });
+            router.push('/login');
+            return;
+        }
+
+        // In a real app, this would redirect to a checkout page and process payment.
+        // For this simulation, we'll just create an order.
+        // This logic should be moved to a server action or API route.
+        console.log('Simulating checkout for user:', user.uid);
+        console.log('Order items:', state.items);
+        console.log('Order total:', totalPrice);
+        
+        // TODO: Create order in Firestore
+        // TODO: Decrement product stock in Firestore (ideally via a Cloud Function)
+
+        toast({
+            title: 'Purchase Simulated',
+            description: "Your order has been 'placed'.",
+        });
+
+        dispatch({ type: 'CLEAR_CART' });
+        router.push('/my-orders');
+    }
+
+    if (state.items.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center mt-8">
+                <div className="text-3xl">🛒</div>
+                <h3 className="mt-4 text-lg font-semibold">Your cart is empty</h3>
+                <p className="mb-4 mt-2 text-sm text-muted-foreground">
+                    Looks like you haven&apos;t added anything to your cart yet.
+                </p>
+                <Link href="/">
+                    <Button>Browse Products</Button>
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-8 grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Items</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {state.items.map(item => (
+                            <div key={item.id} className="flex items-center space-x-4">
+                                <Image
+                                    src={item.imageUrl}
+                                    alt={item.name}
+                                    data-ai-hint={item.imageHint}
+                                    width={80}
+                                    height={80}
+                                    className="rounded-md object-cover"
+                                />
+                                <div className="flex-1">
+                                    <p className="font-medium">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
+                                        <MinusCircle className="h-4 w-4" />
+                                    </Button>
+                                    <span>{item.quantity}</span>
+                                    <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
+                                        <PlusCircle className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+            <div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Order Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>${totalPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Shipping</span>
+                            <span>Free</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between font-bold">
+                            <span>Total</span>
+                            <span>${totalPrice.toFixed(2)}</span>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full bg-accent hover:bg-accent/90" onClick={handleCheckout}>
+                            Proceed to Checkout
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
+    );
+}
