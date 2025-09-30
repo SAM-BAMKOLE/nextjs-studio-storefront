@@ -23,7 +23,9 @@ const functions = getFunctions(app);
 // Initialize Analytics if in browser
 let analytics;
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+  if (firebaseConfig.measurementId) {
+    analytics = getAnalytics(app);
+  }
 }
 
 export { app, auth, db, functions, analytics };
