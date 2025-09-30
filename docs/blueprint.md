@@ -4,7 +4,7 @@
 
 - Product Management: Create, read, update, and delete products.
 - Inventory Tracking: Real-time updates to product stock levels.
-- Sales Data Interpretation Tool: Use the LLM to help the admin with interpretation of key metrics and offer data-driven strategies to enhance sales performance.
+- Sales Data Interpretation Tool: Use the LLM tool to help the admin with interpretation of key metrics and offer data-driven strategies to enhance sales performance.
 - Order Tracking: Track orders with status updates.
 - Product Browsing: Browse and filter available products.
 - Purchase Simulation: Simulate a purchase without real transactions.

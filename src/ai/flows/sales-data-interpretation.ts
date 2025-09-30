@@ -30,13 +30,7 @@ const prompt = ai.definePrompt({
   name: 'interpretSalesDataPrompt',
   input: {schema: InterpretSalesDataInputSchema},
   output: {schema: InterpretSalesDataOutputSchema},
-  prompt: `You are an expert sales data analyst. Analyze the provided sales data and answer the question.
-
-Sales Data: {{{salesData}}}
-
-Question: {{{query}}}
-
-Insight: `,
+  prompt: `You are an expert sales data analyst. Analyze the provided sales data and answer the question.\n\nSales Data: {{{salesData}}}\n\nQuestion: {{{query}}}\n\nInsight: `,
 });
 
 const interpretSalesDataFlow = ai.defineFlow(
