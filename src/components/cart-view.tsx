@@ -9,7 +9,7 @@ import { MinusCircle, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export function CartView() {
@@ -38,23 +38,13 @@ export function CartView() {
         }
 
         try {
-            const orderRef = await addDoc(collection(db, 'orders'), {
+            await addDoc(collection(db, 'orders'), {
                 userId: user.uid,
                 items: state.items,
                 total: totalPrice,
                 status: 'Pending',
                 createdAt: serverTimestamp(),
             });
-
-            // Decrement stock
-            const batch = writeBatch(db);
-            state.items.forEach(item => {
-                const productRef = doc(db, 'products', item.id);
-                batch.update(productRef, {
-                    stock: item.stock - item.quantity
-                });
-            });
-            await batch.commit();
 
             toast({
                 title: 'Order Placed!',
