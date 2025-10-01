@@ -9,15 +9,16 @@ import { MinusCircle, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from './ui/skeleton';
+import { checkout } from '@/ai/flows/checkout-flow';
+import { useState } from 'react';
 
 export function CartView() {
     const { state, dispatch, totalPrice, isCartReady } = useCart();
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
 
     const handleUpdateQuantity = (id: string, quantity: number) => {
         dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
@@ -38,13 +39,12 @@ export function CartView() {
             return;
         }
 
+        setIsCheckingOut(true);
+
         try {
-            await addDoc(collection(db, 'orders'), {
+            await checkout({
                 userId: user.uid,
                 items: state.items,
-                total: totalPrice,
-                status: 'Pending',
-                createdAt: serverTimestamp(),
             });
 
             toast({
@@ -55,13 +55,15 @@ export function CartView() {
             dispatch({ type: 'CLEAR_CART' });
             router.push('/my-orders');
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error placing order: ", error);
             toast({
                 variant: 'destructive',
                 title: 'Checkout Error',
-                description: 'There was a problem placing your order.',
+                description: error.message || 'There was a problem placing your order.',
             });
+        } finally {
+            setIsCheckingOut(false);
         }
     }
 
@@ -155,8 +157,8 @@ export function CartView() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full bg-accent hover:bg-accent/90" onClick={handleCheckout}>
-                            Proceed to Checkout
+                        <Button className="w-full bg-accent hover:bg-accent/90" onClick={handleCheckout} disabled={isCheckingOut}>
+                            {isCheckingOut ? 'Placing Order...' : 'Proceed to Checkout'}
                         </Button>
                     </CardFooter>
                 </Card>
