@@ -45,7 +45,16 @@ export function CartView() {
 
         try {
             await runTransaction(db, async (transaction) => {
-                // 1. Create the order document
+                const productRefs = state.items.map(item => doc(db, 'products', item.id));
+                const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+                for (let i = 0; i < productDocs.length; i++) {
+                    if (!productDocs[i].exists()) {
+                        throw new Error(`Product ${state.items[i].name} not found!`);
+                    }
+                }
+                
+                // All reads are done. Now perform writes.
                 const orderRef = doc(collection(db, 'orders'));
                 transaction.set(orderRef, {
                     userId: user.uid,
@@ -55,21 +64,14 @@ export function CartView() {
                     createdAt: serverTimestamp(),
                 });
 
-                // 2. Update stock for each item
-                for (const item of state.items) {
-                    const productRef = doc(db, 'products', item.id);
-                    const productDoc = await transaction.get(productRef);
-
-                    if (!productDoc.exists()) {
-                        throw new Error(`Product ${item.name} not found!`);
-                    }
-
+                for (let i = 0; i < productDocs.length; i++) {
+                    const productDoc = productDocs[i];
+                    const item = state.items[i];
                     const newStock = productDoc.data().stock - item.quantity;
                     if (newStock < 0) {
                         throw new Error(`Not enough stock for ${item.name}`);
                     }
-
-                    transaction.update(productRef, { stock: newStock });
+                    transaction.update(productRefs[i], { stock: newStock });
                 }
             });
 
