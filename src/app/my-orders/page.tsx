@@ -11,10 +11,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+// Define a type for the order with a Date object for createdAt
+type OrderWithDate = Omit<Order, 'createdAt'> & { createdAt: Date | null };
+
 export default function MyOrdersPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [orders, setOrders] = useState<OrderWithDate[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
 
     useEffect(() => {
@@ -27,22 +30,29 @@ export default function MyOrdersPage() {
         if (user) {
             const fetchOrders = async () => {
                 setOrdersLoading(true);
-                const q = query(
-                    collection(db, 'orders'),
-                    where('userId', '==', user.uid),
-                    orderBy('createdAt', 'desc')
-                );
-                const querySnapshot = await getDocs(q);
-                const userOrders = querySnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        ...data,
-                        createdAt: data.createdAt as Timestamp, // Cast to Timestamp
-                    } as Order;
-                });
-                setOrders(userOrders);
-                setOrdersLoading(false);
+                try {
+                    const q = query(
+                        collection(db, 'orders'),
+                        where('userId', '==', user.uid),
+                        orderBy('createdAt', 'desc')
+                    );
+                    const querySnapshot = await getDocs(q);
+                    const userOrders = querySnapshot.docs.map(doc => {
+                        const data = doc.data() as Order;
+                        // Correctly convert Timestamp to Date
+                        const createdAtDate = data.createdAt instanceof Timestamp ? data.createdAt.toDate() : null;
+                        return {
+                            ...data,
+                            id: doc.id,
+                            createdAt: createdAtDate,
+                        } as OrderWithDate;
+                    });
+                    setOrders(userOrders);
+                } catch (error) {
+                    console.error("Error fetching orders:", error);
+                } finally {
+                    setOrdersLoading(false);
+                }
             };
             fetchOrders();
         }
@@ -102,7 +112,7 @@ export default function MyOrdersPage() {
                                         {orders.map((order) => (
                                             <TableRow key={order.id}>
                                                 <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
-                                                <TableCell>{order.createdAt?.toDate().toLocaleDateString()}</TableCell>
+                                                <TableCell>{order.createdAt?.toLocaleDateString() || 'N/A'}</TableCell>
                                                 <TableCell><Badge variant={order.status === 'Shipped' ? 'default' : 'secondary'}>{order.status}</Badge></TableCell>
                                                 <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                                             </TableRow>
