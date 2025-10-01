@@ -12,6 +12,7 @@ import { z } from 'genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { CartItem } from '@/lib/types';
+import admin from 'firebase-admin';
 
 // Singleton pattern to ensure Firebase Admin is initialized only once.
 const getDb = (() => {
@@ -20,7 +21,7 @@ const getDb = (() => {
   return () => {
     if (!db) {
       if (!getApps().length) {
-        initializeApp();
+        admin.initializeApp();
       }
       db = getFirestore(getApps()[0]);
     }
