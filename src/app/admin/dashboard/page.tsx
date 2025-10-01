@@ -23,7 +23,7 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [salesDataString, setSalesDataString] = useState('');
     const [dashboardLoading, setDashboardLoading] = useState(true);
-    const [query, setQuery] = useState('Summarize the sales performance.');
+    const [aiQuery, setAiQuery] = useState('Summarize the sales performance.');
     const [insight, setInsight] = useState('');
     const [insightLoading, setInsightLoading] = useState(false);
     const [error, setError] = useState('');
@@ -111,7 +111,7 @@ export default function DashboardPage() {
         try {
             const result = await interpretSalesData({
                 salesData: salesDataString,
-                query: query,
+                query: aiQuery,
             });
             setInsight(result.insight);
         } catch (e: any) {
@@ -190,8 +190,8 @@ export default function DashboardPage() {
                         <h3 className="font-semibold mb-2">Your Question</h3>
                         <Textarea 
                             placeholder="e.g., What are the sales trends this month?"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            value={aiQuery}
+                            onChange={(e) => setAiQuery(e.target.value)}
                         />
                     </div>
                     <Button onClick={handleGetInsight} disabled={insightLoading || dashboardLoading}>
