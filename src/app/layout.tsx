@@ -27,7 +27,7 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <SiteHeader />
-            <main className="flex-1 container py-8 mx-auto">
+            <main className="flex-1 container py-8">
               {children}
             </main>
             <Toaster />
