@@ -14,21 +14,11 @@ import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { CartItem } from '@/lib/types';
 import admin from 'firebase-admin';
 
-// Singleton pattern to ensure Firebase Admin is initialized only once.
-const getDb = (() => {
-  let db: ReturnType<typeof getFirestore>;
+if (!getApps().length) {
+  initializeApp();
+}
 
-  return () => {
-    if (!db) {
-      if (!getApps().length) {
-        admin.initializeApp();
-      }
-      db = getFirestore(getApps()[0]);
-    }
-    return db;
-  };
-})();
-
+const db = getFirestore();
 
 const CartItemSchema = z.object({
     id: z.string(),
@@ -62,7 +52,6 @@ const checkoutFlow = ai.defineFlow(
     outputSchema: CheckoutOutputSchema,
   },
   async (input) => {
-    const db = getDb();
     const { userId, items } = input;
     
     // Calculate total price on the server to prevent manipulation
