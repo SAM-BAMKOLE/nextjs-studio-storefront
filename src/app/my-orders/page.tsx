@@ -70,11 +70,9 @@ export default function MyOrdersPage() {
         return (
             <div className="relative flex min-h-screen flex-col">
                 <SiteHeader />
-                <main className="flex-1">
-                    <div className="container py-8">
-                        <Skeleton className="h-12 w-1/4 mb-4" />
-                        {renderSkeleton()}
-                    </div>
+                <main className="container flex-1 py-8">
+                    <Skeleton className="h-12 w-1/4 mb-4" />
+                    {renderSkeleton()}
                 </main>
             </div>
         );
@@ -83,46 +81,44 @@ export default function MyOrdersPage() {
     return (
         <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
-            <main className="flex-1">
-                <div className="container py-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>My Orders</CardTitle>
-                            <CardDescription>View your past orders and their status.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {ordersLoading ? renderSkeleton() : orders.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center">
-                                    <h3 className="text-lg font-semibold">No orders yet</h3>
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                        You haven&apos;t placed any orders yet.
-                                    </p>
-                                </div>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Order ID</TableHead>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Total</TableHead>
+            <main className="container flex-1 py-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>My Orders</CardTitle>
+                        <CardDescription>View your past orders and their status.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {ordersLoading ? renderSkeleton() : orders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center">
+                                <h3 className="text-lg font-semibold">No orders yet</h3>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    You haven&apos;t placed any orders yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Order ID</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Total</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {orders.map((order) => (
+                                        <TableRow key={order.id}>
+                                            <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
+                                            <TableCell>{order.createdAt?.toLocaleDateString() || 'N/A'}</TableCell>
+                                            <TableCell><Badge variant={order.status === 'Shipped' ? 'default' : 'secondary'}>{order.status}</Badge></TableCell>
+                                            <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                                         </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {orders.map((order) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
-                                                <TableCell>{order.createdAt?.toLocaleDateString() || 'N/A'}</TableCell>
-                                                <TableCell><Badge variant={order.status === 'Shipped' ? 'default' : 'secondary'}>{order.status}</Badge></TableCell>
-                                                <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
             </main>
         </div>
     );
