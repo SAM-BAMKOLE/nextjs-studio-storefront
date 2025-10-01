@@ -10,19 +10,23 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
-import { CartItem, Order, Product } from '@/lib/types';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { CartItem } from '@/lib/types';
 
-// Initialize Firebase Admin SDK if not already initialized
-let app: App;
-if (!getApps().length) {
-  app = initializeApp({
-    credential: applicationDefault(),
-  });
-} else {
-  app = getApps()[0];
-}
-const db = getFirestore(app);
+// Singleton pattern to ensure Firebase Admin is initialized only once.
+const getDb = (() => {
+  let db: ReturnType<typeof getFirestore>;
+
+  return () => {
+    if (!db) {
+      if (!getApps().length) {
+        initializeApp();
+      }
+      db = getFirestore(getApps()[0]);
+    }
+    return db;
+  };
+})();
 
 
 const CartItemSchema = z.object({
@@ -57,6 +61,7 @@ const checkoutFlow = ai.defineFlow(
     outputSchema: CheckoutOutputSchema,
   },
   async (input) => {
+    const db = getDb();
     const { userId, items } = input;
     
     // Calculate total price on the server to prevent manipulation
