@@ -13,7 +13,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
+import { useState } from 'react';
 
 const navItems = [
     { href: '/admin/dashboard', icon: BarChart, label: 'Dashboard' },
@@ -24,6 +25,7 @@ const navItems = [
 export function AdminSidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
     const handleLogout = async () => {
         await signOut(auth);
@@ -76,7 +78,7 @@ export function AdminSidebar() {
 
             {/* Mobile Drawer */}
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:hidden">
-              <Sheet>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button size="icon" variant="outline" className="sm:hidden">
                     <PanelLeft className="h-5 w-5" />
@@ -90,6 +92,7 @@ export function AdminSidebar() {
                   <nav className="grid gap-6 text-lg font-medium">
                     <Link
                       href="/"
+                      onClick={() => setIsSheetOpen(false)}
                       className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                     >
                       <Package className="h-5 w-5 transition-all group-hover:scale-110" />
@@ -99,6 +102,7 @@ export function AdminSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={() => setIsSheetOpen(false)}
                             className={cn("flex items-center gap-4 px-2.5",
                                 pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                             )}
@@ -108,7 +112,10 @@ export function AdminSidebar() {
                         </Link>
                     ))}
                     <button
-                        onClick={handleLogout}
+                        onClick={() => {
+                            setIsSheetOpen(false);
+                            handleLogout();
+                        }}
                         className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                     >
                         <LogOut className="h-5 w-5" />
