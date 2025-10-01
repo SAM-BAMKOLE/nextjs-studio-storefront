@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getCountFromServer, collection, query } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,12 +32,9 @@ export default function SignupPage() {
       // Update the user's profile in Firebase Auth
       await updateProfile(user, { displayName });
       
-      // Determine user role. First user is an admin.
-      const usersCollection = collection(db, 'users');
-      const q = query(usersCollection);
-      const userCountSnapshot = await getCountFromServer(q);
-      const isFirstUser = userCountSnapshot.data().count === 0;
-      const role = isFirstUser ? 'admin' : 'user';
+      // All new users are 'user' role by default for security.
+      // An admin can be created by manually changing the role in the Firestore database.
+      const role = 'user';
 
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
