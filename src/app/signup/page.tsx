@@ -47,14 +47,12 @@ export default function SignupPage() {
         role: role,
       });
 
-      if (isFirstUser) {
-        toast({
-            title: 'Admin Account Created',
-            description: 'You have been assigned as the administrator.',
-        });
-      }
+      toast({
+          title: 'Account Created',
+          description: "Your account has been created. Please log in.",
+      });
 
-      router.push('/');
+      router.push('/login');
     } catch (error: any) {
       console.error("Signup failed:", error);
       toast({
