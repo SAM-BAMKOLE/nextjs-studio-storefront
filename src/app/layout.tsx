@@ -25,7 +25,9 @@ export default function RootLayout({
       <body className={cn("font-body antialiased min-h-screen", "font-body")}>
         <AuthProvider>
           <CartProvider>
-            {children}
+            <div className="container">
+              {children}
+            </div>
             <Toaster />
           </CartProvider>
         </AuthProvider>
