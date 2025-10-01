@@ -10,6 +10,8 @@ import { ProductActions } from '@/components/admin/product-actions';
 import { collection, getDocs, writeBatch, doc, getCountFromServer, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 const mockProducts: Omit<Product, 'id'>[] = [
   { name: 'Wireless Headphones', description: 'High-fidelity sound, 24-hour battery.', price: 199.99, stock: 15, imageUrl: PlaceHolderImages[0].imageUrl, imageHint: PlaceHolderImages[0].imageHint },
@@ -22,33 +24,12 @@ const mockProducts: Omit<Product, 'id'>[] = [
   { name: 'Modern Laptop', description: '13-inch display, 16GB RAM, 512GB SSD.', price: 1200.00, stock: 12, imageUrl: PlaceHolderImages[7].imageUrl, imageHint: PlaceHolderImages[7].imageHint },
 ];
 
-async function seedDatabase() {
-    try {
-        const productsCollection = collection(db, 'products');
-        const snapshot = await getCountFromServer(query(productsCollection));
-
-        if (snapshot.data().count === 0) {
-            console.log('No products found, seeding database...');
-            const batch = writeBatch(db);
-            mockProducts.forEach((product) => {
-                const docRef = doc(productsCollection);
-                batch.set(docRef, product);
-            });
-            await batch.commit();
-            console.log('Database seeded successfully.');
-            return true; // Indicates that seeding was performed
-        } else {
-            console.log('Products already exist, skipping seeding.');
-        }
-    } catch (error) {
-        console.error("Error seeding database: ", error);
-    }
-    return false; // Indicates no seeding was performed
-}
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const { isAdmin } = useAuth();
+    const { toast } = useToast();
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -59,25 +40,62 @@ export default function ProductsPage() {
             setProducts(productsList);
         } catch (error) {
             console.error("Error fetching products: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error fetching products',
+                description: 'Could not load products from the database.',
+            });
         } finally {
             setLoading(false);
         }
     };
     
     useEffect(() => {
+        const seedDatabase = async () => {
+            if (!isAdmin) return;
+    
+            try {
+                const productsCollection = collection(db, 'products');
+                const snapshot = await getCountFromServer(query(productsCollection));
+        
+                if (snapshot.data().count === 0) {
+                    console.log('No products found as admin, seeding database...');
+                    const batch = writeBatch(db);
+                    mockProducts.forEach((product) => {
+                        const docRef = doc(productsCollection);
+                        batch.set(docRef, product);
+                    });
+                    await batch.commit();
+                    console.log('Database seeded successfully.');
+                    toast({
+                        title: 'Database Seeded',
+                        description: 'Initial products have been added to the store.',
+                    });
+                    return true; // Indicates that seeding was performed
+                } else {
+                    console.log('Products already exist, skipping seeding.');
+                }
+            } catch (error) {
+                console.error("Error seeding database: ", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error Seeding Database',
+                    description: 'Could not add initial products.',
+                });
+            }
+            return false; // Indicates no seeding was performed
+        }
+
         const initializeProducts = async () => {
             setLoading(true);
             const seeded = await seedDatabase();
-            if (seeded) {
-                // If we just seeded, refetch the products
-                await fetchProducts();
-            } else {
-                await fetchProducts();
-            }
+            // Always fetch products, regardless of seeding
+            await fetchProducts();
             setLoading(false);
         };
+
         initializeProducts();
-    }, []);
+    }, [isAdmin, toast]);
 
     const handleProductUpdate = (product: Product) => {
         setProducts(prev => {
