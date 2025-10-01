@@ -71,7 +71,7 @@ export default function MyOrdersPage() {
             <div className="relative flex min-h-screen flex-col">
                 <SiteHeader />
                 <main className="flex-1">
-                    <div className="container relative py-8">
+                    <div className="container py-8">
                         <Skeleton className="h-12 w-1/4 mb-4" />
                         {renderSkeleton()}
                     </div>
@@ -84,7 +84,7 @@ export default function MyOrdersPage() {
         <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
             <main className="flex-1">
-                <div className="container relative py-8">
+                <div className="container py-8">
                     <Card>
                         <CardHeader>
                             <CardTitle>My Orders</CardTitle>

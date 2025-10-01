@@ -7,8 +7,8 @@ export default function Home() {
     <div className="relative flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <div className="container relative">
-          <section className="py-8">
+        <div className="container py-8">
+          <section className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
               Products
             </h1>
