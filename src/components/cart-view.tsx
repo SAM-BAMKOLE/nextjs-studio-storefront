@@ -10,8 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
-import { checkout } from '@/ai/flows/checkout-flow';
 import { useState } from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export function CartView() {
     const { state, dispatch, totalPrice, isCartReady } = useCart();
@@ -42,9 +43,15 @@ export function CartView() {
         setIsCheckingOut(true);
 
         try {
-            await checkout({
+            // Since the server-side flow is failing, we revert to creating the order on the client.
+            // Note: We are NOT updating stock here, as that would require insecure Firestore rules.
+            // Stock will need to be managed manually by an admin.
+            await addDoc(collection(db, 'orders'), {
                 userId: user.uid,
                 items: state.items,
+                total: totalPrice,
+                status: 'Pending',
+                createdAt: serverTimestamp(),
             });
 
             toast({
