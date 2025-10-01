@@ -30,17 +30,17 @@ export default function SignupPage() {
 
       await updateProfile(user, { displayName });
       
-      // Check if any other admin user exists.
-      const adminsQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
-      const adminSnapshot = await getDocs(adminsQuery);
-      const isFirstUser = adminSnapshot.empty;
+      // Check if any users exist at all.
+      const usersCollection = collection(db, 'users');
+      const userCountSnapshot = await getCountFromServer(usersCollection);
+      const isFirstUser = userCountSnapshot.data().count === 0;
 
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: displayName,
-        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if no other admin exists
+        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if they are the first user
       });
 
       if (isFirstUser) {
