@@ -10,14 +10,14 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
 import { CartItem, Order, Product } from '@/lib/types';
 
 // Initialize Firebase Admin SDK if not already initialized
 let app: App;
 if (!getApps().length) {
   app = initializeApp({
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    credential: applicationDefault(),
   });
 } else {
   app = getApps()[0];
