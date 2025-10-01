@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, limit, getCountFromServer } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, query, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,15 +25,15 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Check if this is the first user
+      const usersCollection = collection(db, 'users');
+      const snapshot = await getCountFromServer(query(usersCollection, limit(1)));
+      const isFirstUser = snapshot.data().count === 0;
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       await updateProfile(user, { displayName });
-
-      // Check if this is the first user in a transaction to be safe
-      const usersCollection = collection(db, 'users');
-      const snapshot = await getCountFromServer(query(usersCollection));
-      const isFirstUser = snapshot.data().count === 0;
 
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
