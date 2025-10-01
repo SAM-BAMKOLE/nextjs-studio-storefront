@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, Package, BarChart, ShoppingCart, LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -84,6 +84,9 @@ export function AdminSidebar() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="sm:max-w-xs">
+                  <SheetHeader>
+                    <SheetTitle className="sr-only">Admin Menu</SheetTitle>
+                  </SheetHeader>
                   <nav className="grid gap-6 text-lg font-medium">
                     <Link
                       href="/"
