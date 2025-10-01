@@ -10,12 +10,12 @@ export function MainNav() {
   const { isAdmin } = useAuth();
 
   return (
-    <div className="flex gap-6 md:gap-10">
+    <div className="hidden md:flex gap-6 md:gap-10">
       <Link href="/" className="flex items-center space-x-2">
         <Package className="h-6 w-6" />
         <span className="inline-block font-bold">Storefront Manager</span>
       </Link>
-      <nav className="flex gap-6">
+      <nav className="hidden md:flex gap-6">
         <Link
           href="/"
           className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
