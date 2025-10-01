@@ -11,8 +11,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 import { useState } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, runTransaction, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import type { Product } from '@/lib/types';
 
 export function CartView() {
     const { state, dispatch, totalPrice, isCartReady } = useCart();
@@ -43,15 +44,33 @@ export function CartView() {
         setIsCheckingOut(true);
 
         try {
-            // Since the server-side flow is failing, we revert to creating the order on the client.
-            // Note: We are NOT updating stock here, as that would require insecure Firestore rules.
-            // Stock will need to be managed manually by an admin.
-            await addDoc(collection(db, 'orders'), {
-                userId: user.uid,
-                items: state.items,
-                total: totalPrice,
-                status: 'Pending',
-                createdAt: serverTimestamp(),
+            await runTransaction(db, async (transaction) => {
+                // 1. Create the order document
+                const orderRef = doc(collection(db, 'orders'));
+                transaction.set(orderRef, {
+                    userId: user.uid,
+                    items: state.items,
+                    total: totalPrice,
+                    status: 'Pending',
+                    createdAt: serverTimestamp(),
+                });
+
+                // 2. Update stock for each item
+                for (const item of state.items) {
+                    const productRef = doc(db, 'products', item.id);
+                    const productDoc = await transaction.get(productRef);
+
+                    if (!productDoc.exists()) {
+                        throw new Error(`Product ${item.name} not found!`);
+                    }
+
+                    const newStock = productDoc.data().stock - item.quantity;
+                    if (newStock < 0) {
+                        throw new Error(`Not enough stock for ${item.name}`);
+                    }
+
+                    transaction.update(productRef, { stock: newStock });
+                }
             });
 
             toast({
@@ -67,7 +86,7 @@ export function CartView() {
             toast({
                 variant: 'destructive',
                 title: 'Checkout Error',
-                description: error.message || 'There was a problem placing your order.',
+                description: error.message || 'There was a problem placing your order. Note: This may be a permission issue if Firestore rules are not set correctly.',
             });
         } finally {
             setIsCheckingOut(false);
