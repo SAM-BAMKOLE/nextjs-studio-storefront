@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, query, where, getCountFromServer } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,22 +25,22 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Check if this is the first user
-      const usersCollection = collection(db, 'users');
-      const snapshot = await getCountFromServer(query(usersCollection, limit(1)));
-      const isFirstUser = snapshot.data().count === 0;
-
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       await updateProfile(user, { displayName });
+      
+      // Check if any other admin user exists.
+      const adminsQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
+      const adminSnapshot = await getDocs(adminsQuery);
+      const isFirstUser = adminSnapshot.empty;
 
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: displayName,
-        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if first user
+        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if no other admin exists
       });
 
       if (isFirstUser) {
