@@ -4,6 +4,7 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { CartProvider } from '@/hooks/use-cart';
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils';
+import { SiteHeader } from '@/components/site-header';
 
 export const metadata: Metadata = {
   title: 'Storefront Manager',
@@ -25,7 +26,8 @@ export default function RootLayout({
       <body className={cn("font-body antialiased min-h-screen flex flex-col", "font-body")}>
         <AuthProvider>
           <CartProvider>
-            <main className="flex-1">
+            <SiteHeader />
+            <main className="flex-1 container py-8">
               {children}
             </main>
             <Toaster />
