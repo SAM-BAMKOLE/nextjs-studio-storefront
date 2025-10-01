@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 
@@ -28,6 +30,9 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="pr-0">
+        <SheetHeader>
+          <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
+        </SheetHeader>
         <Link
           href="/"
           className="flex items-center"
