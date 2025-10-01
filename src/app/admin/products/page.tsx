@@ -6,26 +6,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ProductActions } from '@/components/admin/product-actions';
-
-// MOCK DATA - Replace with Firestore fetching logic
-const mockProducts: Product[] = [
-  { id: '1', name: 'Wireless Headphones', description: 'High-fidelity sound, 24-hour battery.', price: 199.99, stock: 15, imageUrl: PlaceHolderImages[0].imageUrl, imageHint: PlaceHolderImages[0].imageHint },
-  { id: '2', name: 'Durable Backpack', description: 'Water-resistant, multiple compartments.', price: 89.99, stock: 30, imageUrl: PlaceHolderImages[1].imageUrl, imageHint: PlaceHolderImages[1].imageHint },
-  { id: '3', name: 'Smart Watch', description: 'Fitness tracking, notifications, and more.', price: 249.99, stock: 0, imageUrl: PlaceHolderImages[2].imageUrl, imageHint: PlaceHolderImages[2].imageHint },
-  { id: '4', name: 'Coffee Maker', description: 'Brews up to 12 cups. Programmable timer.', price: 129.99, stock: 10, imageUrl: PlaceHolderImages[3].imageUrl, imageHint: PlaceHolderImages[3].imageHint },
-];
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // TODO: Fetch products from Firestore
-        setLoading(true);
-        setProducts(mockProducts);
-        setLoading(false);
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                const productsCollection = collection(db, 'products');
+                const productsSnapshot = await getDocs(productsCollection);
+                const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+                setProducts(productsList);
+            } catch (error) {
+                console.error("Error fetching products: ", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
     }, []);
 
     const handleProductUpdate = (product: Product) => {

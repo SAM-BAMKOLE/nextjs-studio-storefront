@@ -11,37 +11,83 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-
-// Mock data
-const mockOrders: (Omit<Order, 'createdAt' | 'userId'> & { customer: string, createdAt: Date })[] = [
-    { id: 'ORD-001', customer: 'John Doe', items: [], total: 289.98, status: 'Shipped', createdAt: new Date('2023-03-15') },
-    { id: 'ORD-002', customer: 'Jane Smith', items: [], total: 129.99, status: 'Delivered', createdAt: new Date('2023-03-14') },
-    { id: 'ORD-003', customer: 'Bob Johnson', items: [], total: 79.99, status: 'Pending', createdAt: new Date('2023-03-16') },
-    { id: 'ORD-004', customer: 'Alice Williams', items: [], total: 350.00, status: 'Cancelled', createdAt: new Date('2023-03-12') },
-];
+import { collection, doc, getDocs, updateDoc, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { getDoc } from 'firebase/firestore';
 
 type OrderStatus = Order['status'];
 
+type OrderWithCustomerName = Omit<Order, 'createdAt'> & { customerName: string; createdAt: Date };
+
 export default function OrdersPage() {
-    const [orders, setOrders] = useState<(Omit<Order, 'createdAt' | 'userId'> & { customer: string, createdAt: Date })[]>([]);
+    const [orders, setOrders] = useState<OrderWithCustomerName[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
-        // TODO: Fetch orders from Firestore
-        setLoading(true);
-        setOrders(mockOrders);
-        setLoading(false);
-    }, []);
+        const fetchOrders = async () => {
+            setLoading(true);
+            try {
+                const ordersCollection = collection(db, 'orders');
+                const q = query(ordersCollection, orderBy('createdAt', 'desc'));
+                const ordersSnapshot = await getDocs(q);
+                
+                const ordersList = await Promise.all(ordersSnapshot.docs.map(async (orderDoc) => {
+                    const orderData = orderDoc.data() as Order;
+                    let customerName = 'Unknown User';
+                    
+                    if (orderData.userId) {
+                        const userDocRef = doc(db, 'users', orderData.userId);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists()) {
+                            customerName = userDoc.data().displayName || 'Unknown User';
+                        }
+                    }
 
-    const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-        // TODO: Update order status in Firestore
-        console.log(`Updating order ${orderId} to ${newStatus}`);
+                    return {
+                        ...orderData,
+                        id: orderDoc.id,
+                        customerName,
+                        createdAt: orderData.createdAt.toDate(),
+                    };
+                }));
+
+                setOrders(ordersList);
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Failed to fetch orders',
+                    description: 'Could not load orders from the database.'
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrders();
+    }, [toast]);
+
+    const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+        const originalOrders = [...orders];
         setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-        toast({
-            title: 'Order Status Updated',
-            description: `Order ${orderId} has been updated to ${newStatus}.`
-        });
+        
+        try {
+            const orderRef = doc(db, 'orders', orderId);
+            await updateDoc(orderRef, { status: newStatus });
+            toast({
+                title: 'Order Status Updated',
+                description: `Order ${orderId} has been updated to ${newStatus}.`
+            });
+        } catch (error) {
+            console.error(`Error updating order ${orderId}:`, error);
+            setOrders(originalOrders);
+            toast({
+                variant: 'destructive',
+                title: 'Update failed',
+                description: `Could not update order ${orderId}.`
+            });
+        }
     };
 
     return (
@@ -67,7 +113,7 @@ export default function OrdersPage() {
                             {orders.map(order => (
                                 <TableRow key={order.id}>
                                     <TableCell className="font-medium">{order.id}</TableCell>
-                                    <TableCell>{order.customer}</TableCell>
+                                    <TableCell>{order.customerName}</TableCell>
                                     <TableCell>{order.createdAt.toLocaleDateString()}</TableCell>
                                     <TableCell>
                                         <Select

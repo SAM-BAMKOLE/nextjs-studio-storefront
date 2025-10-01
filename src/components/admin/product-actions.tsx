@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@/lib/types";
 import { Edit } from 'lucide-react';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ProductActionsProps {
     product?: Product;
@@ -37,8 +39,7 @@ export function ProductActions({ product, onProductSaved }: ProductActionsProps)
         e.preventDefault();
         setLoading(true);
 
-        const savedProduct: Product = {
-            id: product?.id || new Date().toISOString(), // Mock ID generation
+        const productData: Omit<Product, 'id'> = {
             name,
             description,
             price,
@@ -47,26 +48,40 @@ export function ProductActions({ product, onProductSaved }: ProductActionsProps)
             imageHint: product?.imageHint || 'new product'
         };
 
-        // TODO: In a real app, call a server action or API to save to Firestore
-        console.log('Saving product:', savedProduct);
+        try {
+            let savedProduct: Product;
+            if (isEditing && product.id) {
+                const productRef = doc(db, 'products', product.id);
+                await updateDoc(productRef, productData);
+                savedProduct = { ...productData, id: product.id };
+            } else {
+                const docRef = await addDoc(collection(db, 'products'), productData);
+                savedProduct = { ...productData, id: docRef.id };
+            }
+            
+            onProductSaved(savedProduct);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        onProductSaved(savedProduct);
+            toast({
+                title: `Product ${isEditing ? 'updated' : 'created'}`,
+                description: `${name} has been saved successfully.`,
+            });
 
-        toast({
-            title: `Product ${isEditing ? 'updated' : 'created'}`,
-            description: `${name} has been saved successfully.`,
-        });
-
-        setLoading(false);
-        setOpen(false);
-        if (!isEditing) {
-            setName('');
-            setDescription('');
-            setPrice(0);
-            setStock(0);
+            setOpen(false);
+            if (!isEditing) {
+                setName('');
+                setDescription('');
+                setPrice(0);
+                setStock(0);
+            }
+        } catch (error: any) {
+            console.error('Error saving product:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Error saving product',
+                description: error.message,
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
