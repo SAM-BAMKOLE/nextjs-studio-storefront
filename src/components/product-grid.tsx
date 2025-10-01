@@ -2,45 +2,8 @@
 import { useState, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { ProductCard } from './product-card';
-import { collection, getDocs, writeBatch, query, getCountFromServer, doc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-
-const mockProducts: Omit<Product, 'id'>[] = [
-  { name: 'Wireless Headphones', description: 'High-fidelity sound, 24-hour battery.', price: 199.99, stock: 15, imageUrl: PlaceHolderImages[0].imageUrl, imageHint: PlaceHolderImages[0].imageHint },
-  { name: 'Durable Backpack', description: 'Water-resistant, multiple compartments.', price: 89.99, stock: 30, imageUrl: PlaceHolderImages[1].imageUrl, imageHint: PlaceHolderImages[1].imageHint },
-  { name: 'Smart Watch', description: 'Fitness tracking, notifications, and more.', price: 249.99, stock: 25, imageUrl: PlaceHolderImages[2].imageUrl, imageHint: PlaceHolderImages[2].imageHint },
-  { name: 'Coffee Maker', description: 'Brews up to 12 cups. Programmable timer.', price: 129.99, stock: 10, imageUrl: PlaceHolderImages[3].imageUrl, imageHint: PlaceHolderImages[3].imageHint },
-  { name: 'Ergonomic Office Chair', description: 'Full back support, adjustable height.', price: 350.00, stock: 8, imageUrl: PlaceHolderImages[4].imageUrl, imageHint: PlaceHolderImages[4].imageHint },
-  { name: 'Running Shoes', description: 'Lightweight and responsive for daily runs.', price: 130.00, stock: 50, imageUrl: PlaceHolderImages[5].imageUrl, imageHint: PlaceHolderImages[5].imageHint },
-  { name: 'Bluetooth Speaker', description: 'Portable, waterproof, 12-hour playtime.', price: 79.99, stock: 40, imageUrl: PlaceHolderImages[6].imageUrl, imageHint: PlaceHolderImages[6].imageHint },
-  { name: 'Modern Laptop', description: '13-inch display, 16GB RAM, 512GB SSD.', price: 1200.00, stock: 12, imageUrl: PlaceHolderImages[7].imageUrl, imageHint: PlaceHolderImages[7].imageHint },
-];
-
-
-async function seedDatabase() {
-    try {
-        const productsCollection = collection(db, 'products');
-        const snapshot = await getCountFromServer(query(productsCollection));
-
-        if (snapshot.data().count === 0) {
-            console.log('No products found, seeding database...');
-            const batch = writeBatch(db);
-            mockProducts.forEach((product) => {
-                const docRef = doc(productsCollection);
-                batch.set(docRef, product);
-            });
-            await batch.commit();
-            console.log('Database seeded successfully.');
-        } else {
-            console.log('Products already exist, skipping seeding.');
-        }
-    } catch (error) {
-        console.error("Error seeding database: ", error);
-        // This might fail if firestore is not enabled, which is fine.
-    }
-}
-
 
 export function ProductGrid() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -49,7 +12,6 @@ export function ProductGrid() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      await seedDatabase();
       try {
         const productsCollection = collection(db, 'products');
         const productsSnapshot = await getDocs(productsCollection);
@@ -57,9 +19,8 @@ export function ProductGrid() {
         setProducts(productsList);
       } catch (error) {
         console.error("Error fetching products:", error);
-        // Display mock products as a fallback if firestore fails
-        const mockProductsWithIds = mockProducts.map((p, i) => ({ ...p, id: `mock-${i}` }));
-        setProducts(mockProductsWithIds);
+        // Fallback for display if firestore is not configured
+        setProducts([]);
       }
       setLoading(false);
     };
@@ -81,6 +42,17 @@ export function ProductGrid() {
             ))}
         </div>
     );
+  }
+
+  if (products.length === 0 && !loading) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center col-span-full">
+            <h3 className="text-lg font-semibold">No products found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+                It looks like there are no products in the store yet.
+            </p>
+        </div>
+      )
   }
 
   return (
