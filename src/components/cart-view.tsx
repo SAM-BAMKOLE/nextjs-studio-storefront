@@ -3,13 +3,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { MinusCircle, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { collection, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export function CartView() {
     const { state, dispatch, totalPrice } = useCart();
@@ -25,7 +26,7 @@ export function CartView() {
         dispatch({ type: 'REMOVE_ITEM', payload: { id } });
     };
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         if (!user) {
             toast({
                 variant: 'destructive',
@@ -36,23 +37,41 @@ export function CartView() {
             return;
         }
 
-        // In a real app, this would redirect to a checkout page and process payment.
-        // For this simulation, we'll just create an order.
-        // This logic should be moved to a server action or API route.
-        console.log('Simulating checkout for user:', user.uid);
-        console.log('Order items:', state.items);
-        console.log('Order total:', totalPrice);
-        
-        // TODO: Create order in Firestore
-        // TODO: Decrement product stock in Firestore (ideally via a Cloud Function)
+        try {
+            const orderRef = await addDoc(collection(db, 'orders'), {
+                userId: user.uid,
+                items: state.items,
+                total: totalPrice,
+                status: 'Pending',
+                createdAt: serverTimestamp(),
+            });
 
-        toast({
-            title: 'Purchase Simulated',
-            description: "Your order has been 'placed'.",
-        });
+            // Decrement stock
+            const batch = writeBatch(db);
+            state.items.forEach(item => {
+                const productRef = doc(db, 'products', item.id);
+                batch.update(productRef, {
+                    stock: item.stock - item.quantity
+                });
+            });
+            await batch.commit();
 
-        dispatch({ type: 'CLEAR_CART' });
-        router.push('/my-orders');
+            toast({
+                title: 'Order Placed!',
+                description: "Your order has been successfully placed.",
+            });
+
+            dispatch({ type: 'CLEAR_CART' });
+            router.push('/my-orders');
+
+        } catch (error) {
+            console.error("Error placing order: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Checkout Error',
+                description: 'There was a problem placing your order.',
+            });
+        }
     }
 
     if (state.items.length === 0) {

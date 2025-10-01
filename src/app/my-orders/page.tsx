@@ -8,18 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// MOCK DATA - Replace with Firestore fetching logic
-const mockOrders: Omit<Order, 'createdAt'>[] = [
-    { id: 'ORD-001', userId: 'mockUser', items: [], total: 289.98, status: 'Shipped' },
-    { id: 'ORD-002', userId: 'mockUser', items: [], total: 129.99, status: 'Delivered' },
-    { id: 'ORD-003', userId: 'mockUser', items: [], total: 79.99, status: 'Pending' },
-];
+import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function MyOrdersPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const [orders, setOrders] = useState<(Omit<Order, 'createdAt'> & { createdAt?: any })[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
 
     useEffect(() => {
@@ -30,16 +25,23 @@ export default function MyOrdersPage() {
 
     useEffect(() => {
         if (user) {
-            // TODO: Fetch orders for the current user from Firestore
             const fetchOrders = async () => {
                 setOrdersLoading(true);
-                // Example: const userOrders = await getOrdersFromFirestore(user.uid);
-                // Add a mock date for display
-                const ordersWithDate = mockOrders.map((o, i) => ({
-                    ...o,
-                    createdAt: new Date(Date.now() - i * 3 * 24 * 60 * 60 * 1000)
-                }));
-                setOrders(ordersWithDate);
+                const q = query(
+                    collection(db, 'orders'),
+                    where('userId', '==', user.uid),
+                    orderBy('createdAt', 'desc')
+                );
+                const querySnapshot = await getDocs(q);
+                const userOrders = querySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        createdAt: data.createdAt as Timestamp, // Cast to Timestamp
+                    } as Order;
+                });
+                setOrders(userOrders);
                 setOrdersLoading(false);
             };
             fetchOrders();
@@ -79,7 +81,14 @@ export default function MyOrdersPage() {
                             <CardDescription>View your past orders and their status.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {ordersLoading ? renderSkeleton() : (
+                            {ordersLoading ? renderSkeleton() : orders.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 p-12 text-center">
+                                    <h3 className="text-lg font-semibold">No orders yet</h3>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        You haven&apos;t placed any orders yet.
+                                    </p>
+                                </div>
+                            ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -92,8 +101,8 @@ export default function MyOrdersPage() {
                                     <TableBody>
                                         {orders.map((order) => (
                                             <TableRow key={order.id}>
-                                                <TableCell className="font-medium">{order.id}</TableCell>
-                                                <TableCell>{order.createdAt?.toLocaleDateString()}</TableCell>
+                                                <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
+                                                <TableCell>{order.createdAt?.toDate().toLocaleDateString()}</TableCell>
                                                 <TableCell><Badge variant={order.status === 'Shipped' ? 'default' : 'secondary'}>{order.status}</Badge></TableCell>
                                                 <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                                             </TableRow>
