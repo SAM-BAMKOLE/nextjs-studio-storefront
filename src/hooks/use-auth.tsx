@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,36 +28,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
         setUser(user);
         const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const profile = userDoc.data() as UserProfile;
-          setUserProfile(profile);
-          setIsAdmin(profile.role === 'admin');
-        } else {
-          // Fallback for users that exist in auth but not in firestore
-          const basicProfile: UserProfile = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            role: 'user',
+        const unsubscribeSnapshot = onSnapshot(userDocRef, (userDoc) => {
+          if (userDoc.exists()) {
+            const profile = userDoc.data() as UserProfile;
+            setUserProfile(profile);
+            setIsAdmin(profile.role === 'admin');
+          } else {
+            // User doc doesn't exist yet, wait for creation
+            setUserProfile(null);
+            setIsAdmin(false);
           }
-          setUserProfile(basicProfile);
-          setIsAdmin(false);
-        }
+           setLoading(false);
+        });
+        return () => unsubscribeSnapshot();
       } else {
         setUser(null);
         setUserProfile(null);
         setIsAdmin(false);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
 
   const value = { user, userProfile, loading, isAdmin };
