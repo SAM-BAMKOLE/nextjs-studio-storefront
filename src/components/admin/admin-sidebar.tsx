@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, BarChart, ShoppingCart, LogOut } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { PanelLeft, Package, BarChart, ShoppingCart, LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -73,27 +74,47 @@ export function AdminSidebar() {
                 </TooltipProvider>
             </aside>
 
-            {/* Mobile Bottom Bar */}
-            <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t bg-card p-2">
-                {navItems.map(item => (
+            {/* Mobile Drawer */}
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button size="icon" variant="outline" className="sm:hidden">
+                    <PanelLeft className="h-5 w-5" />
+                    <span className="sr-only">Toggle Menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="sm:max-w-xs">
+                  <nav className="grid gap-6 text-lg font-medium">
                     <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn("flex flex-col items-center rounded-lg p-2 transition-colors", 
-                        pathname === item.href ? 'text-primary' : 'text-muted-foreground hover:text-foreground')}
+                      href="/"
+                      className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
                     >
-                        <item.icon className="h-6 w-6" />
-                        <span className="text-xs">{item.label}</span>
+                      <Package className="h-5 w-5 transition-all group-hover:scale-110" />
+                      <span className="sr-only">Storefront</span>
                     </Link>
-                ))}
-                <button
-                    onClick={handleLogout}
-                    className="flex flex-col items-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    <LogOut className="h-6 w-6" />
-                    <span className="text-xs">Logout</span>
-                </button>
-            </nav>
+                    {navItems.map(item => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn("flex items-center gap-4 px-2.5",
+                                pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <item.icon className="h-5 w-5" />
+                            {item.label}
+                        </Link>
+                    ))}
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                        <LogOut className="h-5 w-5" />
+                        Logout
+                    </button>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </header>
         </>
     );
 }
