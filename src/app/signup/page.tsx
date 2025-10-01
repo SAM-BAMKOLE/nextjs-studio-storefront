@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getCountFromServer, collection } from 'firebase/firestore';
+import { doc, setDoc, getCountFromServer, collection, query } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,23 +25,26 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Update the user's profile in Firebase Auth
       await updateProfile(user, { displayName });
       
-      // Check if this is the first user to determine the role.
-      // This is now safe because we are authenticated.
+      // Determine user role. First user is an admin.
       const usersCollection = collection(db, 'users');
-      const userCountSnapshot = await getCountFromServer(usersCollection);
+      const q = query(usersCollection);
+      const userCountSnapshot = await getCountFromServer(q);
       const isFirstUser = userCountSnapshot.data().count === 0;
+      const role = isFirstUser ? 'admin' : 'user';
 
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: displayName,
-        role: isFirstUser ? 'admin' : 'user',
+        role: role,
       });
 
       if (isFirstUser) {
@@ -53,6 +56,7 @@ export default function SignupPage() {
 
       router.push('/');
     } catch (error: any) {
+      console.error("Signup failed:", error);
       toast({
         variant: 'destructive',
         title: 'Signup Failed',

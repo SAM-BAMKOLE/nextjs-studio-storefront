@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuthContextType {
   user: User | null;
@@ -28,30 +27,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
-      if (user) {
-        setUser(user);
-        const userDocRef = doc(db, 'users', user.uid);
-        const unsubscribeSnapshot = onSnapshot(userDocRef, (userDoc) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        try {
+          const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             const profile = userDoc.data() as UserProfile;
             setUserProfile(profile);
             setIsAdmin(profile.role === 'admin');
           } else {
-            // User doc doesn't exist yet, wait for creation
+             // This can happen if the user document hasn't been created yet after signup.
+             // It will be null, and isAdmin will be false, which is correct for a non-admin user.
             setUserProfile(null);
             setIsAdmin(false);
           }
-           setLoading(false);
-        });
-        return () => unsubscribeSnapshot();
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUserProfile(null);
+          setIsAdmin(false);
+        }
       } else {
-        setUser(null);
         setUserProfile(null);
         setIsAdmin(false);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribeAuth();
