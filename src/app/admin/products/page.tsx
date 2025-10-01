@@ -144,7 +144,7 @@ export default function ProductsPage() {
                                     </TableCell>
                                     <TableCell className="font-medium">{product.name}</TableCell>
                                     <TableCell>
-                                        <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+                                        <Badge variant={product.stock > 0 ? 'default' : 'destructive'} className="whitespace-nowrap">
                                             {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
                                         </Badge>
                                     </TableCell>
