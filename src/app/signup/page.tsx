@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { doc, setDoc, getCountFromServer, collection } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,8 @@ export default function SignupPage() {
 
       await updateProfile(user, { displayName });
       
-      // Check if any users exist at all.
+      // Check if this is the first user to determine the role.
+      // This is now safe because we are authenticated.
       const usersCollection = collection(db, 'users');
       const userCountSnapshot = await getCountFromServer(usersCollection);
       const isFirstUser = userCountSnapshot.data().count === 0;
@@ -40,7 +41,7 @@ export default function SignupPage() {
         uid: user.uid,
         email: user.email,
         displayName: displayName,
-        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if they are the first user
+        role: isFirstUser ? 'admin' : 'user',
       });
 
       if (isFirstUser) {
@@ -57,7 +58,8 @@ export default function SignupPage() {
         title: 'Signup Failed',
         description: error.message,
       });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
