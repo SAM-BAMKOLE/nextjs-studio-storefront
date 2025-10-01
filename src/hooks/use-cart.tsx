@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
 import type { CartItem } from '@/lib/types';
 
 interface CartState {
@@ -19,6 +19,7 @@ const CartContext = createContext<{
   dispatch: React.Dispatch<CartAction>;
   itemCount: number;
   totalPrice: number;
+  isCartReady: boolean;
 } | undefined>(undefined);
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -58,35 +59,38 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   }
 };
 
-const getInitialState = (): CartState => {
-    if (typeof window === 'undefined') {
-        return { items: [] };
-    }
-    try {
-        const item = window.localStorage.getItem('cart');
-        return item ? { items: JSON.parse(item) } : { items: [] };
-    } catch (error) {
-        console.error("Error reading cart from localStorage", error);
-        return { items: [] };
-    }
-};
-
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(cartReducer, getInitialState());
+  const [state, dispatch] = useReducer(cartReducer, { items: [] });
+  const [isCartReady, setIsCartReady] = useState(false);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem('cart', JSON.stringify(state.items));
+      const item = window.localStorage.getItem('cart');
+      if (item) {
+        dispatch({ type: 'SET_CART', payload: JSON.parse(item) });
+      }
     } catch (error) {
-        console.error("Error writing cart to localStorage", error);
+        console.error("Error reading cart from localStorage", error);
+    } finally {
+        setIsCartReady(true);
     }
-  }, [state.items]);
+  }, []);
+
+  useEffect(() => {
+    if (isCartReady) {
+        try {
+            window.localStorage.setItem('cart', JSON.stringify(state.items));
+        } catch (error) {
+            console.error("Error writing cart to localStorage", error);
+        }
+    }
+  }, [state.items, isCartReady]);
 
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ state, dispatch, itemCount, totalPrice }}>
+    <CartContext.Provider value={{ state, dispatch, itemCount, totalPrice, isCartReady }}>
       {children}
     </CartContext.Provider>
   );

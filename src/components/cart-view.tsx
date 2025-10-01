@@ -11,9 +11,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Skeleton } from './ui/skeleton';
 
 export function CartView() {
-    const { state, dispatch, totalPrice } = useCart();
+    const { state, dispatch, totalPrice, isCartReady } = useCart();
     const { user } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -62,6 +63,20 @@ export function CartView() {
                 description: 'There was a problem placing your order.',
             });
         }
+    }
+
+    if (!isCartReady) {
+        return (
+            <div className="mt-8 grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+                <div>
+                    <Skeleton className="h-64 w-full" />
+                </div>
+            </div>
+        );
     }
 
     if (state.items.length === 0) {
