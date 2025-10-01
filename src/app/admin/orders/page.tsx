@@ -37,10 +37,14 @@ export default function OrdersPage() {
                     let customerName = 'Unknown User';
                     
                     if (orderData.userId) {
-                        const userDocRef = doc(db, 'users', orderData.userId);
-                        const userDoc = await getDoc(userDocRef);
-                        if (userDoc.exists()) {
-                            customerName = userDoc.data().displayName || 'Unknown User';
+                        try {
+                            const userDocRef = doc(db, 'users', orderData.userId);
+                            const userDoc = await getDoc(userDocRef);
+                            if (userDoc.exists()) {
+                                customerName = userDoc.data().displayName || 'Unknown User';
+                            }
+                        } catch (e) {
+                            console.error(`Could not fetch user ${orderData.userId}`, e);
                         }
                     }
 
@@ -55,11 +59,13 @@ export default function OrdersPage() {
                 setOrders(ordersList);
             } catch (error) {
                 console.error("Error fetching orders:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Failed to fetch orders',
-                    description: 'Could not load orders from the database.'
-                });
+                if ((error as any).code !== 'failed-precondition') {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Failed to fetch orders',
+                        description: 'Could not load orders from the database.'
+                    });
+                }
             } finally {
                 setLoading(false);
             }
