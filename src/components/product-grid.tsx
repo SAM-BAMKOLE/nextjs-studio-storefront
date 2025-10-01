@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { ProductCard } from './product-card';
-import { collection, getDocs, writeBatch, query, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, query, getCountFromServer, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
