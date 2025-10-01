@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection, query, limit } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,12 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Check if there are any users already
+      const usersCollection = collection(db, 'users');
+      const q = query(usersCollection, limit(1));
+      const snapshot = await getDocs(q);
+      const isFirstUser = snapshot.empty;
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -35,8 +41,15 @@ export default function SignupPage() {
         uid: user.uid,
         email: user.email,
         displayName: displayName,
-        role: 'user', // Default role
+        role: isFirstUser ? 'admin' : 'user', // Assign 'admin' if first user
       });
+
+      if (isFirstUser) {
+        toast({
+            title: 'Admin Account Created',
+            description: 'You have been assigned as the administrator.',
+        });
+      }
 
       router.push('/');
     } catch (error: any) {
